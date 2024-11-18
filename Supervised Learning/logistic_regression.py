@@ -3,10 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 # Load data
-data = pd.read_csv(r"D:\Downloads\ML_Models\ML_Models\Dataset\FuelConsumption.csv")
-
-# Dropping unnecessary columns
-data = data.drop(columns=['Year', 'MAKE', 'MODEL', 'VEHICLE CLASS', 'TRANSMISSION', 'FUEL'], axis=1)
+data = pd.read_csv(r"Dataset\age_predictions_cleaned.csv")
 
 # Drop rows with any missing values
 data = data.dropna()
@@ -22,14 +19,14 @@ train_size = int(total_rows * ratio)
 train = data[:train_size]
 test = data[train_size:]
 
-# Ensure 'COEMISSIONS' is used correctly without trailing space
-features_train = train.drop(columns=['COEMISSIONS '], axis=1)
-target_train = train['COEMISSIONS ']
+# # Ensure binary column is selected for target
+features_train = train.drop(columns=['age_group'], axis=1)
+target_train = train['age_group']
 
-features_test = test.drop(columns=['COEMISSIONS '], axis=1)
-target_test = test['COEMISSIONS ']
+features_test = test.drop(columns=['age_group'], axis=1)
+target_test = test['age_group']
 
-#Feature Scaling
+# #Feature Scaling
 # scaler = StandardScaler()
 # features_train = scaler.fit_transform(features_train)
 # features_test = scaler.transform(features_test)
@@ -52,33 +49,52 @@ class LogisticRegression():
         self.epochs = epochs
         self.weights = None
         self.bias = None
-    def sigmoid_function(z):
-        if z>=0:
-            y = (1/1+np.exp(z))
-        else:
-            y = (np.exp(z)/1 + np.exp(z))
-        return y
-    def _sigmoid(self,X):
-        return np.array([self.sigmoid_function(value) for value in X])
-    def prediction(self,X):
-        
+    def _sigmoid(self, X):
+        return 1 / (1 + np.exp(-X))
     def fit(self,X,y):
-        self.weights = np.random.rand(X.shape[0])
+        self.weights = np.zeros(X.shape[1])  # Initialize weights with zeros
         self.bias = 0
         self.X = X
         self.y = y
-        for i in range(self.epochs):
-            x_dot_weights = np.matmul(self.weights,X.transpose()) + self.bias
-            pred = self._sigmoid(x_dot_weights)
-            y_zero_loss = y*np.log(pred)
-            y_one_loss = (1-y)*np.log(pred)
-            loss = -np.mean(y_zero_loss+y_one_loss)
-            db = np.mean(pred-y)
-            gradient_w = np.matmul(self.X.T,pred-y)
-            dw = np.array([np.mean(grad) for grad in gradient_w])
-            self.weights = self.weights - 0.1*dw
-            self.bias = self.bias - 0.1*db
-            
+        for _ in range(self.epochs):
+            x_dot_weights = np.dot(X,self.weights) + self.bias
+            epsilon = 1e-15
+            pred = self._sigmoid(x_dot_weights)  # Ensure predictions are in range (epsilon, 1 - epsilon)
+            y_zero_loss = y * np.log(pred+epsilon)
+            y_one_loss = (1 - y) * np.log(1 - pred+epsilon)
+            loss = -np.mean(y_zero_loss + y_one_loss)
+
+            dw = np.dot(X.T, (pred - y)) / len(y)
+            db = np.mean(pred - y)
+
+            self.weights = self.weights - self.lr*dw
+            self.bias = self.bias - self.lr*db
+            if _%10==0:
+                print(f"Epoch:{_} Loss:{loss}")
+        return self.weights,self.bias
+    def predict(self, X):
+        linear_output = np.dot(X, self.weights) + self.bias
+        y_pred = self._sigmoid(linear_output)
+        return (y_pred >= 0.5).astype(int) 
+
+    def accuracy(self, y_pred, y_true):
+        return round(np.sum(y_pred == y_true) / len(y_true) * 100, 2)
+    
+
+Lr = LogisticRegression(lr=0.01, epochs=100)
+model = Lr.fit(features_train_normalized.values, target_train.values)
+
+y_pred_train = Lr.predict(features_train_normalized.values)
+y_pred_test = Lr.predict(features_test_normalized.values)
+
+
+y_pred_train = Lr.predict(features_train_normalized.values)
+y_pred_test = Lr.predict(features_test_normalized.values)
+
+train_accuracy = Lr.accuracy(y_pred_train,target_train.values)
+test_accuracy = Lr.accuracy(y_pred_test,target_test.values)
+print(f"Training Accuracy: {train_accuracy}%")
+print(f"Testing Accuracy: {test_accuracy}%")
 
 
 

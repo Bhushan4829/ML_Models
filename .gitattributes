@@ -1,0 +1,2 @@
+Dataset/credit_card/credit_card_approval.csv filter=lfs diff=lfs merge=lfs -text
+Dataset/Stock_Market_Prediction/infolimpioavanzadoTarget.csv filter=lfs diff=lfs merge=lfs -text

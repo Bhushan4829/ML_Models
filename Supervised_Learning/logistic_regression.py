@@ -88,7 +88,6 @@ model = Lr.fit(features_train_normalized.values, target_train.values)
 y_pred_train = Lr.predict(features_train_normalized.values)
 y_pred_test = Lr.predict(features_test_normalized.values)
 
-
 y_pred_train = Lr.predict(features_train_normalized.values)
 y_pred_test = Lr.predict(features_test_normalized.values)
 

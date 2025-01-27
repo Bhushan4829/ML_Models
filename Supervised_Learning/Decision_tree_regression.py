@@ -5,7 +5,7 @@ import seaborn as sns
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
 # training_data = pd.read_csv("D:\\Downloads\\ML_Models\\american_express_data\\train.csv")
 training_data = pd.read_csv(r"Dataset\american_express_data\train.csv")
 # print(training_data["gender"].unique().sum())
@@ -31,6 +31,8 @@ X = training_data.drop("credit_card_default", axis=1)
 y = training_data["credit_card_default"]
 featurescaling = StandardScaler()
 scaleddata = featurescaling.fit_transform(X)
+# scaledtarget = featurescaling.fit_transform(y)
+# scaledtgt = pd.DataFrame(scaledtarget, columns=["credit_card_default"])
 scaled_df = pd.DataFrame(scaleddata, columns=X.columns)
 print(scaled_df.head())
 # Train Test Split
@@ -38,11 +40,18 @@ print(scaled_df.head())
 train_x, test_x, train_y, test_y = train_test_split(scaled_df, y, test_size=0.2, random_state=42)
 
 # Decision Tree Implementation from library
-model = DecisionTreeClassifier()
+model = DecisionTreeRegressor()
 model.fit(train_x, train_y)
 print(model.score(test_x, test_y))
 print(model.predict(test_x))
 # Decision Tree Implementation from scratch
+#TreeNode
+# class TreeNode:
+#     def __init__(self, data, feature_index, feature_value, ):
+#         self.data = data
+#         self.num_samples = num_samples
+#         self.num_samples_per_class = num_samples_per_class
+#         self.predicted_class = predicted
 
 # Predictions
 

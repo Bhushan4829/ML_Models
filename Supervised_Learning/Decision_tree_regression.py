@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from collections import Counter
+from sklearn.metrics import log_loss, roc_auc_score, accuracy_score, precision_score, recall_score, f1_score, brier_score_loss
 # training_data = pd.read_csv("D:\\Downloads\\ML_Models\\american_express_data\\train.csv")
 training_data = pd.read_csv(r"Dataset\american_express_data\train.csv")
 # print(training_data["gender"].unique().sum())
@@ -43,10 +44,26 @@ print(scaled_df.head())
 train_x, test_x, train_y, test_y = train_test_split(scaled_df, y, test_size=0.2, random_state=42)
 
 # Decision Tree Implementation from library
-model = DecisionTreeRegressor()
+model = DecisionTreeRegressor(max_depth=4,min_samples_leaf=1)
 model.fit(train_x, train_y)
 print(model.score(test_x, test_y))
-print(model.predict(test_x))
+predict = model.predict(test_x)
+print(model.feature_importances_)
+logloss = log_loss(test_y, predict)  # Use only class 1 probabilities
+roc_auc = roc_auc_score(test_y, predict)  # Use only class 1 probabilities
+brier_score = brier_score_loss(test_y, predict)  # Use only class 1 probabilities
+predict_class = (predict >= 0.5).astype(int)
+accuracy = accuracy_score(test_y, predict_class)
+precision = precision_score(test_y, predict_class)
+recall = recall_score(test_y, predict_class)
+f1 = f1_score(test_y, predict_class)
+print("Log Loss Sklearn Model:", logloss)
+print("ROC-AUC Score Sklearn Model:", roc_auc)
+print("Brier Score Sklearn Model:", brier_score)
+print("Accuracy Sklearn Model:", accuracy)
+print("Precision Sklearn Model:", precision)
+print("Recall Sklearn Model:", recall)
+print("F1 Score Sklearn Model:", f1)
 # Decision Tree Implementation from scratch
 #TreeNode
 class TreeNode:
@@ -184,18 +201,18 @@ class DecisionTreeScratch():
         node = self.tree
         while node:
             if node.feature_index is None:
-                return node.prediction_probs
+                return np.array([1-node.prediction_probs[1],node.prediction_probs[1]])
             if X[node.feature_index] <= node.feature_value:
                 if node.left:
                     node = node.left
                 else:
-                    return node.prediction_probs
+                    return np.array([1-node.prediction_probs[1],node.prediction_probs[1]])
             else:
                 if node.right:
-                    node = node.right
+                    node = node.right 
                 else:
-                    return node.prediction_probs
-        return node.prediction_probs
+                    return np.array([1-node.prediction_probs[1],node.prediction_probs[1]])
+        return np.array([1-node.prediction_probs[1],node.prediction_probs[1]])
 
     def train(self,X:np.array,y:np.array)->None:
         """
@@ -211,13 +228,13 @@ class DecisionTreeScratch():
         """
         Returns Predictions for given X dataset
         """
-        return np.apply_along_axis(self._predict_one_sample,1,X)
+        return np.apply_along_axis(self._predict_one_sample,axis=1,arr=X)
     def predict(self,X:np.array)->np.array:
         """
         Returns Predictions for given X dataset
         """
         pred_probs = self.predict_probs(X)
-        return np.argmax(pred_probs,axis=1)
+        return (pred_probs[:,1]>=0.5).astype(int)
     def _calculate_feature_importances(self,node):
         if node!=None:
             self.feature_importances[node.feature_index] += node.feature_importance
@@ -229,17 +246,9 @@ scratch_model.train(train_x.values,train_y.values)
 #Probabilities
 print(scratch_model.predict_probs(test_x.values))
 #Evaluation
-from sklearn.metrics import log_loss, roc_auc_score, accuracy_score, precision_score, recall_score, f1_score, brier_score_loss
-
-# Get predicted probabilities
-predicted_probs = scratch_model.predict_probs(test_x.values)
-
-# Clip probabilities to prevent log errors
-predicted_probs = np.clip(predicted_probs, 1e-15, 1 - 1e-15)
-
-# Convert to binary predictions using 0.5 threshold
-predicted_classes = (predicted_probs[:, 1] >= 0.5).astype(int)
-
+predicted_probs = scratch_model.predict_probs(test_x.values)# Get predicted probabilities
+predicted_probs = np.clip(predicted_probs, 1e-15, 1 - 1e-15)# Clip probabilities to prevent log errors
+predicted_classes = (predicted_probs[:, 1] >= 0.5).astype(int)# Convert to binary predictions using 0.5 threshold
 # Compute Metrics
 logloss = log_loss(test_y, predicted_probs[:, 1])  # Use only class 1 probabilities
 roc_auc = roc_auc_score(test_y, predicted_probs[:, 1])  # Use only class 1 probabilities
@@ -248,7 +257,6 @@ accuracy = accuracy_score(test_y, predicted_classes)
 precision = precision_score(test_y, predicted_classes)
 recall = recall_score(test_y, predicted_classes)
 f1 = f1_score(test_y, predicted_classes)
-
 # Print Results
 print("Log Loss:", logloss)
 print("ROC-AUC Score:", roc_auc)
@@ -258,9 +266,6 @@ print("Precision:", precision)
 print("Recall:", recall)
 print("F1 Score:", f1)
 
-
-#Testing on Test data
-
 # Your understanding of the data , what you learnt and also all possible options you can explore.
 
 
@@ -268,3 +273,6 @@ print("F1 Score:", f1)
 #https://medium.com/@beratyildirim/regression-tree-from-scratch-using-python-a74dba2bba5f
 #https://medium.com/@enozeren/building-a-decision-tree-from-scratch-324b9a5ed836
 #Code: https://github.com/enesozeren/machine_learning_from_scratch/tree/main/decision_trees
+
+#Documentation:
+#https://bhushan4829.atlassian.net/wiki/spaces/~712020e5e83b9c8ac5421aa151b0d912540ce7/pages/21364737/Decision+Tree+Regression+Implementation+from+Scratch+and+Comparison+with+Scikit-Learn+Model
